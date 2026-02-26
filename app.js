@@ -219,28 +219,30 @@ function renderEvents() {
     row.draggable = true;
 
     row.innerHTML = `
-      <div class="date-card">
-        <div>${day}</div>
-        <span>${month}</span>
-      </div>
-      <div class="event-card">
-        <div class="event-top">
-          <div class="event-title">${event.title}</div>
-          <div class="event-badges">
-            <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
-            <span class="priority ${event.priority}">${priorityLabels[event.priority] ?? event.priority}</span>
-          </div>
+      <div class="event-card single">
+        <div class="event-date">
+          <div class="day">${day}</div>
+          <span>${month}</span>
         </div>
-        <div class="event-meta">
-          <span class="meta-item"><i data-lucide="map-pin"></i>${event.location}</span>
-          <span class="meta-item"><i data-lucide="clock"></i>${event.time}</span>
-        </div>
-        <div class="event-bottom">
-          <div class="tag-chips">
-            ${attendees.map((tag) => `<span class="tag-chip">${tag}</span>`).join("")}
+        <div class="event-content">
+          <div class="event-top">
+            <div class="event-title">${event.title}</div>
+            <div class="event-badges">
+              <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
+              <span class="priority ${event.priority}">${priorityLabels[event.priority] ?? event.priority}</span>
+            </div>
           </div>
-          <div class="card-actions">
-            <button data-action="edit" data-id="${event.id}">Editar</button>
+          <div class="event-meta">
+            <span class="meta-item"><i data-lucide="map-pin"></i>${event.location}</span>
+            <span class="meta-item"><i data-lucide="clock"></i>${event.time}</span>
+          </div>
+          <div class="event-bottom">
+            <div class="tag-chips">
+              ${attendees.map((tag) => `<span class="tag-chip">${tag}</span>`).join("")}
+            </div>
+            <div class="card-actions">
+              <button data-action="edit" data-id="${event.id}">Editar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -374,6 +376,7 @@ function renderIcons() {
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json" },
+    cache: "no-store",
     ...options,
   });
 
