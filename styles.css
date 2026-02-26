@@ -557,6 +557,44 @@ label {
   gap: 6px;
 }
 
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  border: 1px solid #e1e4ee;
+  background: #f2f3f7;
+  color: #1f2536;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.tag:hover {
+  transform: translateY(-1px);
+}
+
+.tag.selected {
+  background: var(--accent);
+  border-color: var(--accent-2);
+  color: #1f2436;
+}
+
+.form-status {
+  min-height: 18px;
+  font-size: 0.8rem;
+  color: #6a7287;
+}
+
+.form-status.error {
+  color: #d94a4a;
+}
+
 input,
 select {
   border: 1px solid #dde0ea;

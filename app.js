@@ -12,6 +12,9 @@ const calendarTitle = document.getElementById("calendarTitle");
 const calendarView = document.getElementById("calendarView");
 const prevMonthBtn = document.getElementById("prevMonth");
 const nextMonthBtn = document.getElementById("nextMonth");
+const ministryTags = document.getElementById("ministryTags");
+const formStatus = document.getElementById("formStatus");
+const saveButton = document.querySelector("#eventForm button[type='submit']");
 
 const fields = {
   id: document.getElementById("eventId"),
@@ -20,8 +23,21 @@ const fields = {
   time: document.getElementById("time"),
   priority: document.getElementById("priority"),
   location: document.getElementById("location"),
-  attendees: document.getElementById("attendees"),
 };
+
+const ministries = [
+  "Música",
+  "Jovens",
+  "Intercessão",
+  "Famílias",
+  "Infantil",
+  "Homens",
+  "Mulheres",
+  "Diáconos",
+  "Adolescentes",
+  "Capelania",
+  "Evangelismo",
+];
 
 const state = {
   filter: "day",
@@ -78,6 +94,37 @@ function formatMonthTitle(date) {
 
 function getEventsOnDate(dateStr) {
   return events.filter((event) => event.date === dateStr);
+}
+
+function getInitials(label) {
+  const words = label.trim().split(/\s+/);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+}
+
+function renderMinistryTags() {
+  ministryTags.innerHTML = "";
+  ministries.forEach((name) => {
+    const tag = document.createElement("button");
+    tag.type = "button";
+    tag.className = "tag";
+    tag.dataset.value = name;
+    tag.textContent = name;
+    ministryTags.appendChild(tag);
+  });
+}
+
+function setSelectedMinistries(selected = []) {
+  const selectedSet = new Set(selected);
+  ministryTags.querySelectorAll(".tag").forEach((tag) => {
+    tag.classList.toggle("selected", selectedSet.has(tag.dataset.value));
+  });
+}
+
+function getSelectedMinistries() {
+  return Array.from(ministryTags.querySelectorAll(".tag.selected")).map(
+    (tag) => tag.dataset.value
+  );
 }
 
 function updateFilterButtons() {
@@ -151,6 +198,7 @@ function renderEvents() {
 
   filtered.forEach((event) => {
     const { day, month } = formatDateParts(event.date);
+    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
 
     const row = document.createElement("div");
     row.className = "event-row";
@@ -176,11 +224,11 @@ function renderEvents() {
         </div>
         <div class="event-meta">
           <div class="attendees">
-            ${event.attendees
+            ${attendees
               .slice(0, 3)
-              .map((person) => `<span class="avatar-mini">${person}</span>`)
+              .map((person) => `<span class="avatar-mini">${getInitials(person)}</span>`)
               .join("")}
-            ${event.attendees.length > 3 ? `<span class="avatar-mini">+${event.attendees.length - 3}</span>` : ""}
+            ${attendees.length > 3 ? `<span class="avatar-mini">+${attendees.length - 3}</span>` : ""}
           </div>
           <div class="card-actions">
             <button data-action="edit" data-id="${event.id}">Editar</button>
@@ -281,6 +329,8 @@ function openModal(event = null) {
   eventModal.setAttribute("aria-hidden", "false");
   document.getElementById("modalTitle").textContent = event ? "Editar evento" : "Criar evento";
   deleteEventBtn.style.display = event ? "inline-flex" : "none";
+  formStatus.textContent = "";
+  formStatus.classList.remove("error");
 
   if (event) {
     fields.id.value = event.id;
@@ -289,7 +339,7 @@ function openModal(event = null) {
     fields.time.value = event.time;
     fields.priority.value = event.priority;
     fields.location.value = event.location;
-    fields.attendees.value = event.attendees.join(", ");
+    setSelectedMinistries(event.attendees || []);
   } else {
     fields.id.value = "";
     fields.title.value = "";
@@ -297,7 +347,7 @@ function openModal(event = null) {
     fields.time.value = "09:00";
     fields.priority.value = "media";
     fields.location.value = "";
-    fields.attendees.value = "";
+    setSelectedMinistries([]);
   }
 }
 
@@ -319,7 +369,14 @@ async function apiRequest(path, options = {}) {
   });
 
   if (!response.ok) {
-    const message = await response.text();
+    const text = await response.text();
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      if (json?.error) message = json.error;
+    } catch (_) {
+      // keep raw text
+    }
     throw new Error(message || "Erro ao acessar o servidor");
   }
 
@@ -334,6 +391,13 @@ async function fetchEvents() {
 
 async function refreshEvents() {
   events = await fetchEvents();
+  if (events.length && state.filter === "day") {
+    const selectedISO = toISODate(state.selectedDate);
+    const hasSelected = events.some((event) => event.date === selectedISO);
+    if (!hasSelected) {
+      setSelectedDate(parseISODate(events[0].date));
+    }
+  }
   renderCalendar();
   renderEvents();
 }
@@ -372,7 +436,6 @@ async function upsertEvent(formData) {
   setSelectedDate(parseISODate(formData.date));
   setFilterDay();
   await refreshEvents();
-  closeModalWindow();
 }
 
 createEventBtn.addEventListener("click", () => openModal());
@@ -444,6 +507,8 @@ weekStrip.addEventListener("click", (event) => {
 
 eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (!eventForm.reportValidity()) return;
+
   const formData = {
     id: fields.id.value,
     title: fields.title.value.trim(),
@@ -451,14 +516,22 @@ eventForm.addEventListener("submit", async (event) => {
     time: fields.time.value,
     priority: fields.priority.value,
     location: fields.location.value.trim(),
-    attendees: fields.attendees.value
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .map((item) => item.slice(0, 2).toUpperCase()),
+    attendees: getSelectedMinistries(),
   };
 
-  await upsertEvent(formData);
+  formStatus.textContent = "Salvando...";
+  formStatus.classList.remove("error");
+  saveButton.disabled = true;
+  try {
+    await upsertEvent(formData);
+    formStatus.textContent = "Evento salvo com sucesso.";
+    closeModalWindow();
+  } catch (error) {
+    formStatus.textContent = error.message || "Erro ao salvar o evento.";
+    formStatus.classList.add("error");
+  } finally {
+    saveButton.disabled = false;
+  }
 });
 
 deleteEventBtn.addEventListener("click", async () => {
@@ -475,6 +548,12 @@ eventsContainer.addEventListener("click", (event) => {
   const eventId = button.dataset.id;
   const eventData = events.find((item) => item.id === eventId);
   if (eventData) openModal(eventData);
+});
+
+ministryTags.addEventListener("click", (event) => {
+  const tag = event.target.closest(".tag");
+  if (!tag) return;
+  tag.classList.toggle("selected");
 });
 
 let draggingRow = null;
@@ -536,6 +615,7 @@ eventsContainer.addEventListener("dragend", () => {
 
 updateFilterButtons();
 updateCalendarViewButtons();
+renderMinistryTags();
 renderCalendar();
 renderEvents();
 renderIcons();

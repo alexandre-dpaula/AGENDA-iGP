@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#3d4b70" />
+    <meta name="theme-color" content="#3d4b70" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#2d3754" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Agenda iGP" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="description" content="AGENDA OFICIAL – IGREJA GRAÇA E PAZ" />
     <meta property="og:title" content="AGENDA OFICIAL – IGREJA GRAÇA E PAZ" />
     <meta property="og:description" content="AGENDA OFICIAL – IGREJA GRAÇA E PAZ" />
@@ -144,9 +150,10 @@
             <input type="text" id="location" required />
           </label>
           <label>
-            Participantes (separados por vírgula)
-            <input type="text" id="attendees" />
+            Participantes (ministérios)
+            <div class="tag-list" id="ministryTags"></div>
           </label>
+          <p class="form-status" id="formStatus" aria-live="polite"></p>
           <div class="modal-actions">
             <button type="button" class="ghost" id="deleteEvent">Excluir</button>
             <button type="submit" class="primary">Salvar evento</button>
