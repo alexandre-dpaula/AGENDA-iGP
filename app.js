@@ -31,6 +31,8 @@ const closeShare = document.getElementById("closeShare");
 const sharePreview = document.getElementById("sharePreview");
 const shareList = document.getElementById("shareList");
 const copyMessage = document.getElementById("copyMessage");
+const leaderStatus = document.getElementById("leaderStatus");
+const saveLeaderButton = document.querySelector("#leaderForm button[type='submit']");
 
 const fields = {
   id: document.getElementById("eventId"),
@@ -613,6 +615,8 @@ leadersBtn.addEventListener("click", () => {
   leadersModal.classList.add("open");
   leadersModal.setAttribute("aria-hidden", "false");
   renderIcons();
+  leaderStatus.textContent = "";
+  leaderStatus.classList.remove("error");
   refreshLeaders();
 });
 
@@ -638,15 +642,22 @@ leaderForm.addEventListener("submit", async (event) => {
     optIn: leaderOptIn.checked,
     ministries: getSelectedTags(leaderTags),
   };
-  if (data.id) {
-    await updateLeader(data);
-  } else {
-    await createLeader(data);
+  leaderStatus.textContent = "Salvando...";
+  leaderStatus.classList.remove("error");
+  saveLeaderButton.disabled = true;
+  try {
+    if (data.id) {
+      await updateLeader(data);
+    } else {
+      await createLeader(data);
+    }
+    leaderStatus.textContent = "Líder salvo com sucesso.";
+  } catch (error) {
+    leaderStatus.textContent = error.message || "Erro ao salvar líder.";
+    leaderStatus.classList.add("error");
+  } finally {
+    saveLeaderButton.disabled = false;
   }
-  leaderForm.reset();
-  leaderId.value = "";
-  setSelectedTags(leaderTags, []);
-  await refreshLeaders();
 });
 
 resetLeader.addEventListener("click", () => {
