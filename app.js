@@ -15,24 +15,11 @@ const nextMonthBtn = document.getElementById("nextMonth");
 const ministryTags = document.getElementById("ministryTags");
 const formStatus = document.getElementById("formStatus");
 const saveButton = document.querySelector("#eventForm button[type='submit']");
-const leadersBtn = document.getElementById("leadersBtn");
-const leadersModal = document.getElementById("leadersModal");
-const closeLeaders = document.getElementById("closeLeaders");
-const leaderForm = document.getElementById("leaderForm");
-const leaderId = document.getElementById("leaderId");
-const leaderName = document.getElementById("leaderName");
-const leaderPhone = document.getElementById("leaderPhone");
-const leaderOptIn = document.getElementById("leaderOptIn");
-const leaderTags = document.getElementById("leaderTags");
-const resetLeader = document.getElementById("resetLeader");
-const leadersList = document.getElementById("leadersList");
 const shareModal = document.getElementById("shareModal");
 const closeShare = document.getElementById("closeShare");
 const sharePreview = document.getElementById("sharePreview");
 const shareList = document.getElementById("shareList");
 const copyMessage = document.getElementById("copyMessage");
-const leaderStatus = document.getElementById("leaderStatus");
-const saveLeaderButton = document.querySelector("#leaderForm button[type='submit']");
 
 const fields = {
   id: document.getElementById("eventId"),
@@ -456,56 +443,6 @@ async function fetchLeaders() {
 
 async function refreshLeaders() {
   leaders = await fetchLeaders();
-  renderLeadersList();
-}
-
-async function createLeader(formData) {
-  await apiRequest("/api/leaders", {
-    method: "POST",
-    body: JSON.stringify(formData),
-  });
-}
-
-async function updateLeader(formData) {
-  await apiRequest("/api/leaders", {
-    method: "PUT",
-    body: JSON.stringify(formData),
-  });
-}
-
-async function deleteLeader(id) {
-  await apiRequest(`/api/leaders?id=${id}`, { method: "DELETE" });
-}
-
-function renderLeadersList() {
-  leadersList.innerHTML = "";
-  if (!leaders.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "Nenhum líder cadastrado.";
-    leadersList.appendChild(empty);
-    return;
-  }
-  leaders.forEach((leader) => {
-    const card = document.createElement("div");
-    card.className = "leader-card";
-    card.innerHTML = `
-      <div class="leader-head">
-        <div>
-          <div class="leader-name">${leader.name}</div>
-          <div class="leader-phone">${leader.phone}</div>
-        </div>
-        <div class="leader-actions">
-          <button class="ghost" data-action="edit-leader" data-id="${leader.id}">Editar</button>
-          <button class="ghost" data-action="delete-leader" data-id="${leader.id}">Excluir</button>
-        </div>
-      </div>
-      <div class="tag-chips">
-        ${(leader.ministries || []).map((tag) => `<span class="tag-chip">${tag}</span>`).join("")}
-      </div>
-    `;
-    leadersList.appendChild(card);
-  });
 }
 
 function buildReminderMessage(eventData) {
@@ -609,80 +546,6 @@ createEventBtn.addEventListener("click", () => openModal());
 closeModal.addEventListener("click", closeModalWindow);
 eventModal.addEventListener("click", (event) => {
   if (event.target === eventModal) closeModalWindow();
-});
-
-leadersBtn.addEventListener("click", () => {
-  leadersModal.classList.add("open");
-  leadersModal.setAttribute("aria-hidden", "false");
-  renderIcons();
-  leaderStatus.textContent = "";
-  leaderStatus.classList.remove("error");
-  refreshLeaders();
-});
-
-closeLeaders.addEventListener("click", () => {
-  leadersModal.classList.remove("open");
-  leadersModal.setAttribute("aria-hidden", "true");
-});
-
-leadersModal.addEventListener("click", (event) => {
-  if (event.target === leadersModal) {
-    leadersModal.classList.remove("open");
-    leadersModal.setAttribute("aria-hidden", "true");
-  }
-});
-
-leaderForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (!leaderForm.reportValidity()) return;
-  const data = {
-    id: leaderId.value || undefined,
-    name: leaderName.value.trim(),
-    phone: leaderPhone.value.trim(),
-    optIn: leaderOptIn.checked,
-    ministries: getSelectedTags(leaderTags),
-  };
-  leaderStatus.textContent = "Salvando...";
-  leaderStatus.classList.remove("error");
-  saveLeaderButton.disabled = true;
-  try {
-    if (data.id) {
-      await updateLeader(data);
-    } else {
-      await createLeader(data);
-    }
-    leaderStatus.textContent = "Líder salvo com sucesso.";
-  } catch (error) {
-    leaderStatus.textContent = error.message || "Erro ao salvar líder.";
-    leaderStatus.classList.add("error");
-  } finally {
-    saveLeaderButton.disabled = false;
-  }
-});
-
-resetLeader.addEventListener("click", () => {
-  leaderForm.reset();
-  leaderId.value = "";
-  setSelectedTags(leaderTags, []);
-});
-
-leadersList.addEventListener("click", async (event) => {
-  const editBtn = event.target.closest("button[data-action='edit-leader']");
-  const deleteBtn = event.target.closest("button[data-action='delete-leader']");
-  if (!editBtn && !deleteBtn) return;
-  const id = (editBtn || deleteBtn).dataset.id;
-  const leader = leaders.find((item) => item.id === id);
-  if (!leader) return;
-  if (deleteBtn) {
-    await deleteLeader(id);
-    await refreshLeaders();
-    return;
-  }
-  leaderId.value = leader.id;
-  leaderName.value = leader.name;
-  leaderPhone.value = leader.phone;
-  leaderOptIn.checked = !!leader.optIn;
-  setSelectedTags(leaderTags, leader.ministries || []);
 });
 
 closeShare.addEventListener("click", () => {
@@ -828,12 +691,6 @@ ministryTags.addEventListener("click", (event) => {
   tag.classList.toggle("selected");
 });
 
-leaderTags.addEventListener("click", (event) => {
-  const tag = event.target.closest(".tag");
-  if (!tag) return;
-  tag.classList.toggle("selected");
-});
-
 let draggingRow = null;
 
 function clearDragging() {
@@ -894,13 +751,9 @@ eventsContainer.addEventListener("dragend", () => {
 updateFilterButtons();
 updateCalendarViewButtons();
 renderMinistryTags();
-renderTagButtons(leaderTags);
 renderCalendar();
 renderEvents();
 renderIcons();
 refreshEvents().catch((error) => {
-  console.error(error);
-});
-refreshLeaders().catch((error) => {
   console.error(error);
 });

@@ -79,6 +79,7 @@ body {
   position: relative;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
+  text-decoration: none;
 }
 
 .icon-btn .lucide {
@@ -566,6 +567,16 @@ body {
 
 .modal-card {
   width: min(440px, 92vw);
+  background: #fff;
+  color: #1f2536;
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 16px;
+}
+
+.card-panel {
   background: #fff;
   color: #1f2536;
   border-radius: 24px;

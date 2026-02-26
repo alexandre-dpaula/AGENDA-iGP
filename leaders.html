@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2d3754" />
+    <meta name="color-scheme" content="light" />
+    <title>Líderes - Agenda iGP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="profile">
+          <a class="icon-btn" href="index.html" aria-label="Voltar">
+            <i data-lucide="chevron-left"></i>
+          </a>
+          <div>
+            <p class="hello">GRAÇA E PAZ</p>
+            <p class="name">LÍDERES</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" id="refreshLeaders" aria-label="Atualizar lista">
+            <i data-lucide="refresh-ccw"></i>
+          </button>
+        </div>
+      </header>
+
+      <section class="headline">
+        <h1>Líderes dos Ministérios</h1>
+      </section>
+
+      <section class="card-panel">
+        <form id="leaderForm">
+          <input type="hidden" id="leaderId" />
+          <label>
+            Nome
+            <input type="text" id="leaderName" required />
+          </label>
+          <label>
+            WhatsApp (E.164)
+            <input type="text" id="leaderPhone" placeholder="+55XXXXXXXXXXX" required />
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="leaderOptIn" checked />
+            Receber lembretes (opt-in)
+          </label>
+          <label>
+            Ministérios
+            <div class="tag-list" id="leaderTags"></div>
+          </label>
+          <p class="form-status" id="leaderStatus" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="resetLeader">Limpar</button>
+            <button type="submit" class="primary">Salvar líder</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <div class="leaders-list" id="leadersList"></div>
+      </section>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="leaders.js"></script>
+  </body>
+</html>
