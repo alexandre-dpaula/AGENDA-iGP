@@ -96,6 +96,19 @@ function getEventsOnDate(dateStr) {
   return events.filter((event) => event.date === dateStr);
 }
 
+function normalizeAttendees(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+  return [];
+}
+
 function getInitials(label) {
   const words = label.trim().split(/\s+/);
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
@@ -198,7 +211,7 @@ function renderEvents() {
 
   filtered.forEach((event) => {
     const { day, month } = formatDateParts(event.date);
-    const attendees = Array.isArray(event.attendees) ? event.attendees : [];
+    const attendees = normalizeAttendees(event.attendees);
 
     const row = document.createElement("div");
     row.className = "event-row";
@@ -335,7 +348,7 @@ function openModal(event = null) {
     fields.time.value = event.time;
     fields.priority.value = event.priority;
     fields.location.value = event.location;
-    setSelectedMinistries(event.attendees || []);
+    setSelectedMinistries(normalizeAttendees(event.attendees));
   } else {
     fields.id.value = "";
     fields.title.value = "";

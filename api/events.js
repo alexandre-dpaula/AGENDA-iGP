@@ -36,6 +36,17 @@ function mapEvent(row) {
       : typeof rawDate === "string"
         ? rawDate.slice(0, 10)
         : "";
+  let attendees = [];
+  if (Array.isArray(row.attendees)) {
+    attendees = row.attendees;
+  } else if (typeof row.attendees === "string") {
+    try {
+      const parsed = JSON.parse(row.attendees);
+      if (Array.isArray(parsed)) attendees = parsed;
+    } catch (_) {
+      attendees = [];
+    }
+  }
 
   return {
     id: row.id,
@@ -44,7 +55,7 @@ function mapEvent(row) {
     time: row.event_time ? String(row.event_time).slice(0, 5) : "",
     location: row.location,
     priority: row.priority,
-    attendees: Array.isArray(row.attendees) ? row.attendees : [],
+    attendees,
     order: row.order_index,
   };
 }
