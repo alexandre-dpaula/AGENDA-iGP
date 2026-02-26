@@ -29,10 +29,18 @@ async function ensureTable() {
 }
 
 function mapEvent(row) {
+  const rawDate = row.event_date;
+  const normalizedDate =
+    rawDate instanceof Date
+      ? rawDate.toISOString().slice(0, 10)
+      : typeof rawDate === "string"
+        ? rawDate.slice(0, 10)
+        : "";
+
   return {
     id: row.id,
     title: row.title,
-    date: row.event_date,
+    date: normalizedDate,
     time: row.event_time ? String(row.event_time).slice(0, 5) : "",
     location: row.location,
     priority: row.priority,
