@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agenda Visual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="profile">
+          <img class="logo" src="icon.png" alt="Ícone da igreja" />
+          <div>
+            <p class="hello">GRAÇA E PAZ</p>
+            <p class="name">LÍDERES</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-btn" aria-label="Buscar">
+            <i data-lucide="search"></i>
+          </button>
+          <button class="icon-btn" aria-label="Notificações">
+            <i data-lucide="bell"></i>
+            <span class="badge">2</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="switcher">
+        <button class="pill active">Hoje</button>
+        <button class="pill">Calendário</button>
+        <button class="pill fab" id="createEventBtn" aria-label="Criar evento">
+          <i data-lucide="plus"></i>
+        </button>
+      </section>
+
+      <section class="headline">
+        <h1>AGENDA OFICIAL – IGREJA GRAÇA E PAZ</h1>
+      </section>
+
+      <section class="controls">
+        <div class="filter-group">
+          <p class="section-label">Filtro</p>
+          <div class="segmented" id="filterSegment">
+            <button class="seg-btn active" data-filter="day">Dia</button>
+            <button class="seg-btn" data-filter="week">Semana</button>
+          </div>
+        </div>
+        <label class="search">
+          <span class="section-label">Busca</span>
+          <input
+            type="search"
+            id="searchInput"
+            placeholder="Buscar título, local, pessoas"
+            autocomplete="off"
+          />
+        </label>
+      </section>
+
+      <section class="calendar">
+        <div class="calendar-header">
+          <div>
+            <p class="section-label">Calendário</p>
+            <h3 id="calendarTitle">Fevereiro 2026</h3>
+          </div>
+          <div class="calendar-actions">
+            <div class="segmented small" id="calendarView">
+              <button class="seg-btn active" data-view="month">Mês</button>
+              <button class="seg-btn" data-view="week">Semana</button>
+            </div>
+            <div class="nav">
+              <button class="icon-btn" id="prevMonth" aria-label="Anterior">
+                <i data-lucide="chevron-left"></i>
+              </button>
+              <button class="icon-btn" id="nextMonth" aria-label="Próximo">
+                <i data-lucide="chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="week-strip hidden" id="weekStrip"></div>
+      </section>
+
+      <main>
+        <div class="events" id="events"></div>
+      </main>
+    </div>
+
+    <div class="modal" id="eventModal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modalTitle">Criar evento</h2>
+          <button class="icon-btn" id="closeModal" aria-label="Fechar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="eventForm">
+          <input type="hidden" id="eventId" />
+          <label>
+            Título
+            <input type="text" id="title" required />
+          </label>
+          <label>
+            Data
+            <input type="date" id="date" required />
+          </label>
+          <div class="grid">
+            <label>
+              Horário
+              <input type="time" id="time" required />
+            </label>
+            <label>
+              Prioridade
+              <select id="priority" required>
+                <option value="alta">Alta</option>
+                <option value="media">Média</option>
+                <option value="baixa">Baixa</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Local
+            <input type="text" id="location" required />
+          </label>
+          <label>
+            Participantes (separados por vírgula)
+            <input type="text" id="attendees" />
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="deleteEvent">Excluir</button>
+            <button type="submit" class="primary">Salvar evento</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
