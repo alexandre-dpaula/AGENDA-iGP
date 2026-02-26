@@ -1,10 +1,16 @@
-const { sql } = require("@vercel/postgres");
+const { randomUUID } = require("crypto");
+const postgres = require("postgres");
+
+const databaseUrl = process.env.POSTGRES_URL;
+const sql = databaseUrl
+  ? postgres(databaseUrl, { max: 1, prepare: false })
+  : null;
 
 async function ensureTable() {
-  await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`;
+  if (!sql) throw new Error("POSTGRES_URL is not configured");
   await sql`
     CREATE TABLE IF NOT EXISTS events (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      id UUID PRIMARY KEY,
       title TEXT NOT NULL,
       event_date DATE NOT NULL,
       event_time TIME NOT NULL,
@@ -49,6 +55,7 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "POST") {
       const attendees = Array.isArray(body.attendees) ? body.attendees : [];
+      const id = body.id || randomUUID();
       const { rows: maxRows } = await sql`
         SELECT COALESCE(MAX(order_index), 0) AS max
         FROM events;
@@ -57,8 +64,8 @@ module.exports = async function handler(req, res) {
       const order = Number.isFinite(body.order) ? body.order : nextOrder;
 
       const { rows } = await sql`
-        INSERT INTO events (title, event_date, event_time, location, priority, attendees, order_index)
-        VALUES (${body.title}, ${body.date}, ${body.time}, ${body.location}, ${body.priority}, ${JSON.stringify(
+        INSERT INTO events (id, title, event_date, event_time, location, priority, attendees, order_index)
+        VALUES (${id}, ${body.title}, ${body.date}, ${body.time}, ${body.location}, ${body.priority}, ${JSON.stringify(
         attendees
       )}::jsonb, ${order})
         RETURNING id, title, event_date, event_time, location, priority, attendees, order_index;

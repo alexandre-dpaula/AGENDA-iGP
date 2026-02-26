@@ -1,10 +1,15 @@
-const { sql } = require("@vercel/postgres");
+const postgres = require("postgres");
+
+const databaseUrl = process.env.POSTGRES_URL;
+const sql = databaseUrl
+  ? postgres(databaseUrl, { max: 1, prepare: false })
+  : null;
 
 async function ensureTable() {
-  await sql`CREATE EXTENSION IF NOT EXISTS "pgcrypto";`;
+  if (!sql) throw new Error("POSTGRES_URL is not configured");
   await sql`
     CREATE TABLE IF NOT EXISTS events (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      id UUID PRIMARY KEY,
       title TEXT NOT NULL,
       event_date DATE NOT NULL,
       event_time TIME NOT NULL,
