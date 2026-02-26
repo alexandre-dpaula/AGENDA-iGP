@@ -2,7 +2,11 @@ const postgres = require("postgres");
 
 const databaseUrl = process.env.POSTGRES_URL;
 const sql = databaseUrl
-  ? postgres(databaseUrl, { max: 1, prepare: false })
+  ? postgres(databaseUrl, {
+      max: 1,
+      prepare: false,
+      ssl: { rejectUnauthorized: false },
+    })
   : null;
 
 async function ensureTable() {
