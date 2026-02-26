@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#3d4b70" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#2d3754" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#2d3754" />
+    <meta name="color-scheme" content="light" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Agenda iGP" />
@@ -44,6 +44,9 @@
         <div class="top-actions">
           <button class="icon-btn" aria-label="Buscar">
             <i data-lucide="search"></i>
+          </button>
+          <button class="icon-btn" id="leadersBtn" aria-label="Líderes">
+            <i data-lucide="users"></i>
           </button>
           <button class="icon-btn" aria-label="Notificações">
             <i data-lucide="bell"></i>
@@ -159,6 +162,57 @@
             <button type="submit" class="primary">Salvar evento</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div class="modal" id="leadersModal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Líderes</h2>
+          <button class="icon-btn" id="closeLeaders" aria-label="Fechar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <form id="leaderForm">
+          <input type="hidden" id="leaderId" />
+          <label>
+            Nome
+            <input type="text" id="leaderName" required />
+          </label>
+          <label>
+            WhatsApp (E.164)
+            <input type="text" id="leaderPhone" placeholder="+55XXXXXXXXXXX" required />
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="leaderOptIn" checked />
+            Receber lembretes (opt-in)
+          </label>
+          <label>
+            Ministérios
+            <div class="tag-list" id="leaderTags"></div>
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="resetLeader">Limpar</button>
+            <button type="submit" class="primary">Salvar líder</button>
+          </div>
+        </form>
+        <div class="leaders-list" id="leadersList"></div>
+      </div>
+    </div>
+
+    <div class="modal" id="shareModal" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Compartilhar no WhatsApp</h2>
+          <button class="icon-btn" id="closeShare" aria-label="Fechar">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="share-preview" id="sharePreview"></div>
+        <div class="share-actions">
+          <button class="ghost" id="copyMessage">Copiar mensagem</button>
+        </div>
+        <div class="share-list" id="shareList"></div>
       </div>
     </div>
 

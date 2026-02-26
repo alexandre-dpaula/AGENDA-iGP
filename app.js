@@ -15,6 +15,22 @@ const nextMonthBtn = document.getElementById("nextMonth");
 const ministryTags = document.getElementById("ministryTags");
 const formStatus = document.getElementById("formStatus");
 const saveButton = document.querySelector("#eventForm button[type='submit']");
+const leadersBtn = document.getElementById("leadersBtn");
+const leadersModal = document.getElementById("leadersModal");
+const closeLeaders = document.getElementById("closeLeaders");
+const leaderForm = document.getElementById("leaderForm");
+const leaderId = document.getElementById("leaderId");
+const leaderName = document.getElementById("leaderName");
+const leaderPhone = document.getElementById("leaderPhone");
+const leaderOptIn = document.getElementById("leaderOptIn");
+const leaderTags = document.getElementById("leaderTags");
+const resetLeader = document.getElementById("resetLeader");
+const leadersList = document.getElementById("leadersList");
+const shareModal = document.getElementById("shareModal");
+const closeShare = document.getElementById("closeShare");
+const sharePreview = document.getElementById("sharePreview");
+const shareList = document.getElementById("shareList");
+const copyMessage = document.getElementById("copyMessage");
 
 const fields = {
   id: document.getElementById("eventId"),
@@ -51,6 +67,8 @@ state.selectedDate.setHours(0, 0, 0, 0);
 state.currentMonth = new Date(state.selectedDate.getFullYear(), state.selectedDate.getMonth(), 1);
 
 let events = [];
+let leaders = [];
+let currentShareEvent = null;
 
 function toISODate(date) {
   const year = date.getFullYear();
@@ -83,6 +101,7 @@ function formatDateParts(dateStr) {
   const day = date.getDate().toString().padStart(2, "0");
   const month = date
     .toLocaleDateString("pt-BR", { month: "short" })
+    .replace(".", "")
     .toUpperCase();
   return { day, month };
 }
@@ -115,29 +134,41 @@ function getInitials(label) {
   return `${words[0][0]}${words[1][0]}`.toUpperCase();
 }
 
-function renderMinistryTags() {
-  ministryTags.innerHTML = "";
+function renderTagButtons(container) {
+  container.innerHTML = "";
   ministries.forEach((name) => {
     const tag = document.createElement("button");
     tag.type = "button";
     tag.className = "tag";
     tag.dataset.value = name;
     tag.textContent = name;
-    ministryTags.appendChild(tag);
+    container.appendChild(tag);
   });
 }
 
-function setSelectedMinistries(selected = []) {
+function setSelectedTags(container, selected = []) {
   const selectedSet = new Set(selected);
-  ministryTags.querySelectorAll(".tag").forEach((tag) => {
+  container.querySelectorAll(".tag").forEach((tag) => {
     tag.classList.toggle("selected", selectedSet.has(tag.dataset.value));
   });
 }
 
-function getSelectedMinistries() {
-  return Array.from(ministryTags.querySelectorAll(".tag.selected")).map(
+function getSelectedTags(container) {
+  return Array.from(container.querySelectorAll(".tag.selected")).map(
     (tag) => tag.dataset.value
   );
+}
+
+function renderMinistryTags() {
+  renderTagButtons(ministryTags);
+}
+
+function setSelectedMinistries(selected = []) {
+  setSelectedTags(ministryTags, selected);
+}
+
+function getSelectedMinistries() {
+  return getSelectedTags(ministryTags);
 }
 
 function updateFilterButtons() {
@@ -188,7 +219,8 @@ function getFilteredEvents() {
 
   if (search) {
     filtered = filtered.filter((event) => {
-      const haystack = `${event.title} ${event.location} ${event.attendees.join(" ")}`.toLowerCase();
+      const tags = normalizeAttendees(event.attendees).join(" ");
+      const haystack = `${event.title} ${event.location} ${tags}`.toLowerCase();
       return haystack.includes(search);
     });
   }
@@ -242,6 +274,7 @@ function renderEvents() {
             </div>
             <div class="card-actions">
               <button data-action="edit" data-id="${event.id}">Editar</button>
+              <button data-action="share" data-id="${event.id}">Compartilhar</button>
             </div>
           </div>
         </div>
@@ -414,6 +447,126 @@ async function refreshEvents() {
   renderEvents();
 }
 
+async function fetchLeaders() {
+  const data = await apiRequest("/api/leaders");
+  return Array.isArray(data) ? data : [];
+}
+
+async function refreshLeaders() {
+  leaders = await fetchLeaders();
+  renderLeadersList();
+}
+
+async function createLeader(formData) {
+  await apiRequest("/api/leaders", {
+    method: "POST",
+    body: JSON.stringify(formData),
+  });
+}
+
+async function updateLeader(formData) {
+  await apiRequest("/api/leaders", {
+    method: "PUT",
+    body: JSON.stringify(formData),
+  });
+}
+
+async function deleteLeader(id) {
+  await apiRequest(`/api/leaders?id=${id}`, { method: "DELETE" });
+}
+
+function renderLeadersList() {
+  leadersList.innerHTML = "";
+  if (!leaders.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Nenhum líder cadastrado.";
+    leadersList.appendChild(empty);
+    return;
+  }
+  leaders.forEach((leader) => {
+    const card = document.createElement("div");
+    card.className = "leader-card";
+    card.innerHTML = `
+      <div class="leader-head">
+        <div>
+          <div class="leader-name">${leader.name}</div>
+          <div class="leader-phone">${leader.phone}</div>
+        </div>
+        <div class="leader-actions">
+          <button class="ghost" data-action="edit-leader" data-id="${leader.id}">Editar</button>
+          <button class="ghost" data-action="delete-leader" data-id="${leader.id}">Excluir</button>
+        </div>
+      </div>
+      <div class="tag-chips">
+        ${(leader.ministries || []).map((tag) => `<span class="tag-chip">${tag}</span>`).join("")}
+      </div>
+    `;
+    leadersList.appendChild(card);
+  });
+}
+
+function buildReminderMessage(eventData) {
+  const ministriesList = normalizeAttendees(eventData.attendees);
+  const ministryLabel =
+    ministriesList.length === 1
+      ? `ministério ${ministriesList[0]}`
+      : ministriesList.length > 1
+        ? `ministérios ${ministriesList.join(", ")}`
+        : "ministérios";
+  const date = parseISODate(eventData.date);
+  const dateLabel = date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const cleanedDate = dateLabel.replace(".", "");
+  return `Lembrete do ${ministryLabel}:\n${eventData.title}\nData: ${cleanedDate} às ${eventData.time}\nLocal: ${eventData.location}`;
+}
+
+function getShareTargets(eventData) {
+  const ministriesList = normalizeAttendees(eventData.attendees);
+  const validLeaders = leaders.filter((leader) => leader.optIn);
+  if (!ministriesList.length) return validLeaders;
+  return validLeaders.filter((leader) => {
+    const leaderTags = Array.isArray(leader.ministries) ? leader.ministries : [];
+    return leaderTags.some((tag) => ministriesList.includes(tag));
+  });
+}
+
+function openShareModal(eventData) {
+  currentShareEvent = eventData;
+  const message = buildReminderMessage(eventData);
+  sharePreview.textContent = message;
+  shareList.innerHTML = "";
+  const targets = getShareTargets(eventData);
+  if (!targets.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "Nenhum líder correspondente aos ministérios.";
+    shareList.appendChild(empty);
+  } else {
+    targets.forEach((leader) => {
+      const encoded = encodeURIComponent(message);
+      const phone = leader.phone.replace(/\D/g, "");
+      const link = `https://wa.me/${phone}?text=${encoded}`;
+      const item = document.createElement("div");
+      item.className = "share-item";
+      item.innerHTML = `
+        <div>
+          <div class="leader-name">${leader.name}</div>
+          <div class="leader-phone">${leader.phone}</div>
+        </div>
+        <a class="primary" href="${link}" target="_blank" rel="noopener">WhatsApp</a>
+      `;
+      shareList.appendChild(item);
+    });
+  }
+  shareModal.classList.add("open");
+  shareModal.setAttribute("aria-hidden", "false");
+  renderIcons();
+}
+
 async function createEvent(formData) {
   await apiRequest("/api/events", {
     method: "POST",
@@ -454,6 +607,93 @@ createEventBtn.addEventListener("click", () => openModal());
 closeModal.addEventListener("click", closeModalWindow);
 eventModal.addEventListener("click", (event) => {
   if (event.target === eventModal) closeModalWindow();
+});
+
+leadersBtn.addEventListener("click", () => {
+  leadersModal.classList.add("open");
+  leadersModal.setAttribute("aria-hidden", "false");
+  renderIcons();
+  refreshLeaders();
+});
+
+closeLeaders.addEventListener("click", () => {
+  leadersModal.classList.remove("open");
+  leadersModal.setAttribute("aria-hidden", "true");
+});
+
+leadersModal.addEventListener("click", (event) => {
+  if (event.target === leadersModal) {
+    leadersModal.classList.remove("open");
+    leadersModal.setAttribute("aria-hidden", "true");
+  }
+});
+
+leaderForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!leaderForm.reportValidity()) return;
+  const data = {
+    id: leaderId.value || undefined,
+    name: leaderName.value.trim(),
+    phone: leaderPhone.value.trim(),
+    optIn: leaderOptIn.checked,
+    ministries: getSelectedTags(leaderTags),
+  };
+  if (data.id) {
+    await updateLeader(data);
+  } else {
+    await createLeader(data);
+  }
+  leaderForm.reset();
+  leaderId.value = "";
+  setSelectedTags(leaderTags, []);
+  await refreshLeaders();
+});
+
+resetLeader.addEventListener("click", () => {
+  leaderForm.reset();
+  leaderId.value = "";
+  setSelectedTags(leaderTags, []);
+});
+
+leadersList.addEventListener("click", async (event) => {
+  const editBtn = event.target.closest("button[data-action='edit-leader']");
+  const deleteBtn = event.target.closest("button[data-action='delete-leader']");
+  if (!editBtn && !deleteBtn) return;
+  const id = (editBtn || deleteBtn).dataset.id;
+  const leader = leaders.find((item) => item.id === id);
+  if (!leader) return;
+  if (deleteBtn) {
+    await deleteLeader(id);
+    await refreshLeaders();
+    return;
+  }
+  leaderId.value = leader.id;
+  leaderName.value = leader.name;
+  leaderPhone.value = leader.phone;
+  leaderOptIn.checked = !!leader.optIn;
+  setSelectedTags(leaderTags, leader.ministries || []);
+});
+
+closeShare.addEventListener("click", () => {
+  shareModal.classList.remove("open");
+  shareModal.setAttribute("aria-hidden", "true");
+});
+
+shareModal.addEventListener("click", (event) => {
+  if (event.target === shareModal) {
+    shareModal.classList.remove("open");
+    shareModal.setAttribute("aria-hidden", "true");
+  }
+});
+
+copyMessage.addEventListener("click", async () => {
+  if (!currentShareEvent) return;
+  const message = buildReminderMessage(currentShareEvent);
+  try {
+    await navigator.clipboard.writeText(message);
+  } catch (_) {
+    // ignore
+  }
 });
 
 filterSegment.addEventListener("click", (event) => {
@@ -556,6 +796,15 @@ deleteEventBtn.addEventListener("click", async () => {
 
 eventsContainer.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action='edit']");
+  const shareBtn = event.target.closest("button[data-action='share']");
+  if (shareBtn) {
+    const eventId = shareBtn.dataset.id;
+    const eventData = events.find((item) => item.id === eventId);
+    if (eventData) {
+      refreshLeaders().then(() => openShareModal(eventData));
+    }
+    return;
+  }
   if (!button) return;
   const eventId = button.dataset.id;
   const eventData = events.find((item) => item.id === eventId);
@@ -563,6 +812,12 @@ eventsContainer.addEventListener("click", (event) => {
 });
 
 ministryTags.addEventListener("click", (event) => {
+  const tag = event.target.closest(".tag");
+  if (!tag) return;
+  tag.classList.toggle("selected");
+});
+
+leaderTags.addEventListener("click", (event) => {
   const tag = event.target.closest(".tag");
   if (!tag) return;
   tag.classList.toggle("selected");
@@ -628,9 +883,13 @@ eventsContainer.addEventListener("dragend", () => {
 updateFilterButtons();
 updateCalendarViewButtons();
 renderMinistryTags();
+renderTagButtons(leaderTags);
 renderCalendar();
 renderEvents();
 renderIcons();
 refreshEvents().catch((error) => {
+  console.error(error);
+});
+refreshLeaders().catch((error) => {
   console.error(error);
 });

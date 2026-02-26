@@ -9,6 +9,7 @@
   --chip: #f2f3f7;
   --ink: #1f2536;
   --shadow: 0 20px 40px rgba(20, 24, 40, 0.35);
+  color-scheme: light;
 }
 
 * {
@@ -19,7 +20,7 @@
 
 body {
   font-family: "Space Grotesk", sans-serif;
-  background: radial-gradient(circle at top, #3d4b70 0%, var(--bg) 50%, #222a3f 100%);
+  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   display: flex;
@@ -392,6 +393,12 @@ body {
   font-weight: 700;
 }
 
+.event-date .day {
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: 0.5px;
+}
+
 .event-date span {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -614,6 +621,90 @@ label {
   color: #1f2436;
 }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #4c546b;
+}
+
+.leaders-list {
+  display: grid;
+  gap: 10px;
+}
+
+.leader-card {
+  border: 1px solid #e5e8f2;
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.leader-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.leader-name {
+  font-weight: 600;
+}
+
+.leader-phone {
+  font-size: 0.8rem;
+  color: #6a7287;
+}
+
+.leader-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.share-preview {
+  background: #f3f4f8;
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.share-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.share-list {
+  display: grid;
+  gap: 10px;
+}
+
+.share-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e5e8f2;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.share-item a {
+  text-decoration: none;
+}
+
+.share-item .primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
 .form-status {
   min-height: 18px;
   font-size: 0.8rem;
@@ -631,6 +722,16 @@ select {
   padding: 10px 12px;
   font-size: 0.9rem;
   font-family: "Space Grotesk", sans-serif;
+  background-color: #fff;
+  color: #1f2536;
+  -webkit-text-fill-color: #1f2536;
+  color-scheme: light;
+}
+
+input[type="date"],
+input[type="time"],
+select {
+  color-scheme: light;
 }
 
 .grid {
