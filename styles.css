@@ -457,6 +457,29 @@ body {
   color: #6a7287;
 }
 
+.event-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  background: #f3f4f8;
+  color: #4c546b;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .meta-item {
   display: inline-flex;
   align-items: center;

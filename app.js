@@ -82,7 +82,7 @@ function formatDateParts(dateStr) {
   const date = parseISODate(dateStr);
   const day = date.getDate().toString().padStart(2, "0");
   const month = date
-    .toLocaleDateString("en-US", { month: "short" })
+    .toLocaleDateString("pt-BR", { month: "short" })
     .toUpperCase();
   return { day, month };
 }
@@ -222,13 +222,9 @@ function renderEvents() {
           <span class="meta-item"><i data-lucide="map-pin"></i>${event.location}</span>
           <span class="meta-item"><i data-lucide="clock"></i>${event.time}</span>
         </div>
-        <div class="event-meta">
-          <div class="attendees">
-            ${attendees
-              .slice(0, 3)
-              .map((person) => `<span class="avatar-mini">${getInitials(person)}</span>`)
-              .join("")}
-            ${attendees.length > 3 ? `<span class="avatar-mini">+${attendees.length - 3}</span>` : ""}
+        <div class="event-bottom">
+          <div class="tag-chips">
+            ${attendees.map((tag) => `<span class="tag-chip">${tag}</span>`).join("")}
           </div>
           <div class="card-actions">
             <button data-action="edit" data-id="${event.id}">Editar</button>
