@@ -23,36 +23,6 @@ const fields = {
   attendees: document.getElementById("attendees"),
 };
 
-const defaultEvents = [
-  {
-    id: crypto.randomUUID(),
-    title: "Treino",
-    date: "2026-02-17",
-    time: "08:30",
-    location: "Academia Green Fit",
-    priority: "alta",
-    attendees: ["GM"],
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Reunião com o time",
-    date: "2026-02-22",
-    time: "09:45",
-    location: "Escritório Green Leaf",
-    priority: "media",
-    attendees: ["J", "B"],
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Almoço com Stephanie",
-    date: "2026-02-27",
-    time: "13:00",
-    location: "Café Mallota",
-    priority: "baixa",
-    attendees: ["S"],
-  },
-];
-
 const state = {
   filter: "day",
   calendarView: "month",
@@ -63,6 +33,8 @@ const state = {
 
 state.selectedDate.setHours(0, 0, 0, 0);
 state.currentMonth = new Date(state.selectedDate.getFullYear(), state.selectedDate.getMonth(), 1);
+
+let events = [];
 
 function toISODate(date) {
   const year = date.getFullYear();
@@ -108,37 +80,6 @@ function getEventsOnDate(dateStr) {
   return events.filter((event) => event.date === dateStr);
 }
 
-function normalizeEvents(list) {
-  const hasOrder = list.every((event) => typeof event.order === "number");
-  if (!hasOrder) {
-    const sorted = [...list].sort((a, b) => {
-      if (a.date === b.date) return a.time.localeCompare(b.time);
-      return a.date.localeCompare(b.date);
-    });
-    sorted.forEach((event, index) => {
-      event.order = index + 1;
-    });
-    return sorted;
-  }
-  return list;
-}
-
-function loadEvents() {
-  const stored = localStorage.getItem("agenda-events");
-  if (stored) {
-    return normalizeEvents(JSON.parse(stored));
-  }
-  const seeded = normalizeEvents(defaultEvents);
-  localStorage.setItem("agenda-events", JSON.stringify(seeded));
-  return seeded;
-}
-
-let events = loadEvents();
-
-function saveEvents() {
-  localStorage.setItem("agenda-events", JSON.stringify(events));
-}
-
 function updateFilterButtons() {
   filterSegment.querySelectorAll(".seg-btn").forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === state.filter);
@@ -149,6 +90,18 @@ function updateCalendarViewButtons() {
   calendarView.querySelectorAll(".seg-btn").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === state.calendarView);
   });
+}
+
+function setFilterDay() {
+  state.filter = "day";
+  updateFilterButtons();
+  renderEvents();
+}
+
+function setFilterWeek() {
+  state.filter = "week";
+  updateFilterButtons();
+  renderEvents();
 }
 
 function setSelectedDate(date) {
@@ -359,41 +312,67 @@ function renderIcons() {
   }
 }
 
-function upsertEvent(formData) {
-  if (formData.id) {
-    const existing = events.find((event) => event.id === formData.id);
-    const order = existing ? existing.order : formData.order;
-    events = events.map((event) => (event.id === formData.id ? { ...formData, order } : event));
-  } else {
-    const maxOrder = events.reduce((max, event) => Math.max(max, event.order || 0), 0);
-    events.push({ ...formData, id: crypto.randomUUID(), order: maxOrder + 1 });
-  }
-  saveEvents();
-  setSelectedDate(parseISODate(formData.date));
-  state.filter = "day";
-  updateFilterButtons();
-  renderCalendar();
-  renderEvents();
-  closeModalWindow();
-}
-
-function reorderFromDom() {
-  const ids = Array.from(eventsContainer.querySelectorAll(".event-row")).map(
-    (row) => row.dataset.id
-  );
-  if (!ids.length) return;
-
-  const orderValues = ids
-    .map((id) => events.find((event) => event.id === id)?.order ?? 0)
-    .sort((a, b) => a - b);
-
-  ids.forEach((id, index) => {
-    const event = events.find((item) => item.id === id);
-    if (event) event.order = orderValues[index] ?? index + 1;
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
   });
 
-  saveEvents();
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || "Erro ao acessar o servidor");
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+async function fetchEvents() {
+  const data = await apiRequest("/api/events");
+  return Array.isArray(data) ? data : [];
+}
+
+async function refreshEvents() {
+  events = await fetchEvents();
+  renderCalendar();
   renderEvents();
+}
+
+async function createEvent(formData) {
+  await apiRequest("/api/events", {
+    method: "POST",
+    body: JSON.stringify(formData),
+  });
+}
+
+async function updateEvent(formData) {
+  await apiRequest("/api/events", {
+    method: "PUT",
+    body: JSON.stringify(formData),
+  });
+}
+
+async function deleteEvent(id) {
+  await apiRequest(`/api/events?id=${id}`, { method: "DELETE" });
+}
+
+async function reorderEvents(updates) {
+  await apiRequest("/api/reorder", {
+    method: "POST",
+    body: JSON.stringify({ updates }),
+  });
+}
+
+async function upsertEvent(formData) {
+  if (formData.id) {
+    await updateEvent(formData);
+  } else {
+    await createEvent(formData);
+  }
+  setSelectedDate(parseISODate(formData.date));
+  setFilterDay();
+  await refreshEvents();
+  closeModalWindow();
 }
 
 createEventBtn.addEventListener("click", () => openModal());
@@ -405,9 +384,11 @@ eventModal.addEventListener("click", (event) => {
 filterSegment.addEventListener("click", (event) => {
   const button = event.target.closest(".seg-btn");
   if (!button) return;
-  state.filter = button.dataset.filter;
-  updateFilterButtons();
-  renderEvents();
+  if (button.dataset.filter === "day") {
+    setFilterDay();
+  } else {
+    setFilterWeek();
+  }
 });
 
 calendarView.addEventListener("click", (event) => {
@@ -449,23 +430,19 @@ calendarGrid.addEventListener("click", (event) => {
   const cell = event.target.closest("button[data-date]");
   if (!cell) return;
   setSelectedDate(parseISODate(cell.dataset.date));
-  state.filter = "day";
-  updateFilterButtons();
+  setFilterDay();
   renderCalendar();
-  renderEvents();
 });
 
 weekStrip.addEventListener("click", (event) => {
   const day = event.target.closest(".week-day");
   if (!day) return;
   setSelectedDate(parseISODate(day.dataset.date));
-  state.filter = "day";
-  updateFilterButtons();
+  setFilterDay();
   renderCalendar();
-  renderEvents();
 });
 
-eventForm.addEventListener("submit", (event) => {
+eventForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = {
     id: fields.id.value,
@@ -481,16 +458,14 @@ eventForm.addEventListener("submit", (event) => {
       .map((item) => item.slice(0, 2).toUpperCase()),
   };
 
-  upsertEvent(formData);
+  await upsertEvent(formData);
 });
 
-deleteEventBtn.addEventListener("click", () => {
+deleteEventBtn.addEventListener("click", async () => {
   const id = fields.id.value;
   if (!id) return;
-  events = events.filter((event) => event.id !== id);
-  saveEvents();
-  renderCalendar();
-  renderEvents();
+  await deleteEvent(id);
+  await refreshEvents();
   closeModalWindow();
 });
 
@@ -526,10 +501,33 @@ eventsContainer.addEventListener("dragover", (event) => {
   eventsContainer.insertBefore(draggingRow, shouldInsertAfter ? row.nextSibling : row);
 });
 
-eventsContainer.addEventListener("drop", (event) => {
+eventsContainer.addEventListener("drop", async (event) => {
   event.preventDefault();
-  reorderFromDom();
-  clearDragging();
+  const ids = Array.from(eventsContainer.querySelectorAll(".event-row")).map((row) => row.dataset.id);
+  if (!ids.length) return;
+
+  const orderValues = ids
+    .map((id) => events.find((item) => item.id === id)?.order ?? 0)
+    .sort((a, b) => a - b);
+
+  const updates = ids.map((id, index) => ({
+    id,
+    order: orderValues[index] ?? index + 1,
+  }));
+
+  updates.forEach((update) => {
+    const eventData = events.find((item) => item.id === update.id);
+    if (eventData) eventData.order = update.order;
+  });
+
+  try {
+    await reorderEvents(updates);
+    await refreshEvents();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    clearDragging();
+  }
 });
 
 eventsContainer.addEventListener("dragend", () => {
@@ -541,3 +539,6 @@ updateCalendarViewButtons();
 renderCalendar();
 renderEvents();
 renderIcons();
+refreshEvents().catch((error) => {
+  console.error(error);
+});
