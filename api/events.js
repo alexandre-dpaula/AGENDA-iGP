@@ -99,15 +99,21 @@ module.exports = async function handler(req, res) {
 
     if (req.method === "PUT") {
       const attendees = Array.isArray(body.attendees) ? body.attendees : [];
+      const orderValue = Number.isFinite(body.order) ? body.order : null;
+      const title = body.title ?? "";
+      const date = body.date ?? "";
+      const time = body.time ?? "";
+      const location = body.location ?? "";
+      const priority = body.priority ?? "";
       const rows = await sql`
         UPDATE events
-        SET title = ${body.title},
-            event_date = ${body.date},
-            event_time = ${body.time},
-            location = ${body.location},
-            priority = ${body.priority},
+        SET title = ${title},
+            event_date = ${date},
+            event_time = ${time},
+            location = ${location},
+            priority = ${priority},
             attendees = ${JSON.stringify(attendees)}::jsonb,
-            order_index = COALESCE(${body.order}, order_index),
+            order_index = COALESCE(${orderValue}, order_index),
             updated_at = NOW()
         WHERE id = ${body.id}
         RETURNING id, title, event_date, event_time, location, priority, attendees, order_index;
