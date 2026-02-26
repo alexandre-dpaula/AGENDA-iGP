@@ -521,7 +521,7 @@ function buildReminderMessage(eventData) {
     year: "numeric",
   });
   const cleanedDate = dateLabel.replace(".", "");
-  return `Lembrete do ${ministryLabel}:\n${eventData.title}\nData: ${cleanedDate} às ${eventData.time}\nLocal: ${eventData.location}`;
+  return `📣 Lembrete do ${ministryLabel}:\n📌 ${eventData.title}\n📅 Data: ${cleanedDate} às ${eventData.time}\n📍 Local: ${eventData.location}`;
 }
 
 function getShareTargets(eventData) {
